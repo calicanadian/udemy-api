@@ -1,5 +1,5 @@
 class AccessTokensController < ApplicationController
-
+  skip_before_action :authorize!, only: :create
   def create
     auth = UserAuthenticator.new(params[:code])
     auth.perform
@@ -7,10 +7,9 @@ class AccessTokensController < ApplicationController
     render json: serializer.new(auth.access_token), status: :created
   end
 
-  # def index
-  #   articles = serializer.new(Article.recent.page(params[:page]).per(params[:per_page]))
-  #   render json: articles
-  # end
+  def destroy
+    current_user.access_token.destroy
+  end
 
   def serializer
     AccessTokenSerializer
