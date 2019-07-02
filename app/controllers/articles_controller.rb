@@ -13,9 +13,10 @@ class ArticlesController < ApplicationController
   def create
     article = Article.new(article_params)
     if article.valid?
-      article.save
+      article.save!
     else
-      render json: error_serializer.new(article), status: :unprocessable_entity
+      errors = article.errors
+      render json: {"errors": error_serializer.new(errors.to_h)}, status: :unprocessable_entity
     end
   end
 
