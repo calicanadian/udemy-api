@@ -1,11 +1,11 @@
 class CommentsController < ApplicationController
   skip_before_action :authorize!, only: [:index]
-  before_action :load_article, only: [:create]
+  before_action :load_article
   # GET /comments
   def index
-    @comments = Comment.all
+    comments = serializer.new(@article.comments.page(params[:page]).per(params[:per_page]))
 
-    render json: @comments
+    render json: comments
   end
 
   # POST /comments
@@ -14,11 +14,10 @@ class CommentsController < ApplicationController
       comment_params.merge(user: current_user)
     )
 
-    if @comment.save
-      render json: @comment, status: :created, location: @article
-    else
-      render json: @comment.errors, status: :unprocessable_entity
-    end
+    @comment.save!
+    render json: serializer.new(@comment), status: :created, location: @article
+  rescue
+    render json: { "errors": @comment.errors }, status: :unprocessable_entity
   end
 
   private
@@ -29,6 +28,14 @@ class CommentsController < ApplicationController
 
   # Only allow a trusted parameter "white list" through.
   def comment_params
-    params.require(:comment).permit(:content)
+    params.require(:data).require(:attributes).permit(:content) || ActionController::Parameters.new
+  end
+
+  def serializer
+    CommentSerializer
+  end
+
+  def error_serializer
+    ErrorSerializer
   end
 end
