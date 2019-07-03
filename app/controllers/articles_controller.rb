@@ -11,13 +11,33 @@ class ArticlesController < ApplicationController
   end
 
   def create
-    article = Article.new(article_params)
-    if article.valid?
-      article.save!
-    else
-      errors = article.errors
-      render json: {"errors": error_serializer.new(errors.to_h)}, status: :unprocessable_entity
-    end
+    # current_user is set with the authorize! method in the application controller.
+    article = current_user.articles.build(article_params)
+    article.save!
+      render json: serializer.new(article), status: :created
+  rescue
+    errors = article.errors
+    render json: {"errors": error_serializer.new(errors.to_h)}, status: :unprocessable_entity
+  end
+
+  def update
+    article = current_user.articles.find(params[:id])
+    article = Article.find(params[:id])
+    article.update_attributes!(article_params)
+    render json: serializer.new(article), status: :ok
+  rescue ActiveRecord::RecordNotFound
+    authorization_error
+  rescue
+    errors = article.errors.as_json
+    render json: {"errors": errors}, status: :unprocessable_entity
+  end
+
+  def destroy
+    article = current_user.articles.find(params[:id])
+    article.destroy
+    head :no_content
+  rescue
+    authorization_error
   end
 
   private
@@ -31,7 +51,7 @@ class ArticlesController < ApplicationController
   end
 
   def article_params
-    ActionController::Parameters.new
+    params.require(:data).require(:attributes).permit(:id, :title, :content, :slug) || ActionController::Parameters.new
   end
 
 end
