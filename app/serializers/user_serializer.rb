@@ -1,3 +1,3 @@
 class UserSerializer < ApplicationSerializer
-  attributes :login, :avatar_url, :url, :name
+  attributes :login, :password, :avatar_url, :url, :name
 end
